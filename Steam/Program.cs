@@ -25,12 +25,11 @@ namespace Steam
             Console.Title = "Steam bot";
             Console.WriteLine("Ctrl + C quits the program");
 
-            ////Console.Write("Username: ");
-            ////username = Console.ReadLine();
-            ////Console.Write("Password: ");
-            ////password = Console.ReadLine();
-            _username = "rishav394";
-            _password = "p9845097056";
+            Console.Write("Username: ");
+            username = Console.ReadLine();
+            Console.Write("Password: ");
+            password = Console.ReadLine();
+            
             Steam_login();
         }
 
