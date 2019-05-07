@@ -4,7 +4,6 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
 using SteamKit2;
-using Dota2.GC;
 
 namespace Steam
 {
@@ -18,7 +17,6 @@ namespace Steam
         private static bool _isRunning;
         private static string _authCode;
         private static string _twoFactorAuth;
-        private static DotaGCHandler _dota;
 
         private static void Main()
         {
@@ -37,8 +35,8 @@ namespace Steam
         private static void Steam_login()
         {
             _steamClient = new SteamClient();
-            DotaGCHandler.Bootstrap(_steamClient);
-            _dota = _steamClient.GetHandler<DotaGCHandler>();
+            //DotaGCHandler.Bootstrap(_steamClient);
+            //_dota = _steamClient.GetHandler<DotaGCHandler>();
             _manager = new CallbackManager(_steamClient);
             _steamUser = _steamClient.GetHandler<SteamUser>();
             _steamFriends = _steamClient.GetHandler<SteamFriends>();
@@ -49,7 +47,7 @@ namespace Steam
             _manager.Subscribe<SteamUser.AccountInfoCallback>(OnAccountInfo);
             _manager.Subscribe<SteamUser.UpdateMachineAuthCallback>(OnMachineAuth);
             _manager.Subscribe<SteamFriends.FriendMsgCallback>(OnChatMessage);
-            _manager.Subscribe<SteamFriends.FriendsListCallback>(OnFriendList);
+            //_manager.Subscribe<SteamFriends.FriendsListCallback>(OnFriendList);
             Console.WriteLine("Connecting to steam in 3s");
             _steamClient.Connect();
             _isRunning = true;
@@ -85,6 +83,46 @@ namespace Steam
 
         private static void OnChatMessage(SteamFriends.FriendMsgCallback obj)
         {
+            var path = Path.Combine("HourBoostr.exe");
+
+            if (obj.EntryType == EChatEntryType.ChatMsg)
+            {
+                switch (obj.Message)
+                {
+                    case "start":
+                        RecognizeMessage(obj);
+                        _steamFriends.SendChatMessage(obj.Sender, EChatEntryType.ChatMsg, "Starting HourBoostr");
+                        try
+                        {
+                            Process.Start(path);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Magenta;
+                            Console.Write("Please put the HourBoostr folder under ");
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine(AppDomain.CurrentDomain.BaseDirectory);
+                            Console.ResetColor();
+                            _steamFriends.SendChatMessage(obj.Sender, EChatEntryType.ChatMsg,
+                                "Error Starting HourBoostr. HourBoostr folder not found.");
+                        }
+
+                        break;
+                    case "status":
+                        RecognizeMessage(obj);
+                        var pname = Process.GetProcessesByName("HourBoostr");
+                        _steamFriends.SendChatMessage(obj.Sender, EChatEntryType.ChatMsg,
+                            pname.Length == 0 ? "HourBoostr is not running." : "HourBoostr is running.");
+                        break;
+                    case "stop":
+                        RecognizeMessage(obj);
+                        _steamFriends.SendChatMessage(obj.Sender, EChatEntryType.ChatMsg,
+                            "Stopping HourBoostr if running.");
+                        Process.Start("cmd.exe", "/c taskkill /IM HourBoostr.exe");
+                        break;
+                }
+            }
+            /*
             if (obj.EntryType == EChatEntryType.ChatMsg)
             {
                 Console.Write("New message from ");
@@ -224,6 +262,7 @@ namespace Steam
                         break;
                 }
             }
+            */
         }
 
         private static void OnAccountInfo(SteamUser.AccountInfoCallback obj)
@@ -303,12 +342,7 @@ namespace Steam
             }
 
             Console.WriteLine("Successfully logged into steam with id {0}", _username);
-            _dota.Start();
-            _dota.SayHello();
-            _dota.Start();
-            Console.WriteLine("Dota 2 should be started for {0}", _username);
-
-
+            
             //SteamUser.LogOff();
         }
 
